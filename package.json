@@ -1,0 +1,26 @@
+{
+  "name": "silentsilo-releases",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Update endpoint for SilentSilo desktop: serves the updater manifest and counts update checks",
+  "type": "module",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "publish:manifest": "wrangler kv key put latest --binding RELEASES --path ./latest.json --remote"
+  },
+  "overrides": {
+    "undici": "7.29.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260722.1",
+    "typescript": "~5.8.0",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.0.0"
+  }
+}

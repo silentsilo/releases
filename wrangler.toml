@@ -1,0 +1,33 @@
+name = "silentsilo-releases"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+
+# Top-level on purpose: TOML is positional, and anything after a [table]
+# header belongs to that table. Parked lower down, this key silently became
+# a field of the table above it and the domain never bound.
+routes = [
+  { pattern = "releases.silentsilo.com", custom_domain = true }
+]
+
+# The manifest lives in KV under the key "latest". Publishing a release is
+# one `npm run publish:manifest` with latest.json in the project root.
+# Create the namespace once with `wrangler kv namespace create RELEASES`
+# and paste the id it prints below.
+kv_namespaces = [
+  { binding = "RELEASES", id = "3b60c92547e543ab858bc5fedbeaeabe" }
+]
+
+# The platform vocabulary the endpoint accepts, and how long the worker
+# caches the manifest it reads from KV. Config rather than code so that
+# adding a platform (macOS, once it ships) is an edit here, next to the
+# bindings. The code falls back to these same values if a var is removed.
+[vars]
+TARGETS = "windows,linux,darwin"
+ARCHS = "x86_64,aarch64,i686,armv7"
+MANIFEST_CACHE_TTL_SECONDS = "60"
+
+# Every update check writes one datapoint here: platform, installed
+# version, outcome. Nothing that identifies a machine or a person.
+[[analytics_engine_datasets]]
+binding = "UPDATE_CHECKS"
+dataset = "silentsilo_update_checks"

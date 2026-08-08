@@ -1,0 +1,16 @@
+node_modules
+.wrangler
+dist
+
+# The manifest is fetched from the GitHub release before publishing; it is
+# an artifact, not source.
+latest.json
+
+# Local tooling state
+.claude/
+.env*
+
+# How this thing is run: setup, deploying, publishing a manifest, reading the
+# metrics. Nothing secret, and nothing a reader checking what the endpoint
+# collects has any use for.
+private/
