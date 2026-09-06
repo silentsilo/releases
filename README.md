@@ -7,6 +7,11 @@ Every installed copy asks it once a day whether a newer version exists. This
 repository is public so that the answer to "what does that request tell you
 about me" can be read rather than believed.
 
+The application it serves lives in
+[silentsilo/desktop](https://github.com/silentsilo/desktop); the engine, the
+persisted formats and the extraction tool are in
+[silentsilo/core](https://github.com/silentsilo/core).
+
 ## What it does
 
 ```
