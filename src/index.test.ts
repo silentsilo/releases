@@ -112,6 +112,82 @@ describe("update decisions", () => {
     ]);
   });
 
+  it("hands a Windows caller exactly what it handed before", async () => {
+    // The pin that guards the installed base. Adding the per-installer keys
+    // below changed how the platform map is selected, and this is the shape
+    // that must not move for the platform every user is on today.
+    const { env } = testEnv(MANIFEST);
+    const res = await call(env, "/windows/x86_64/1.0.0");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      version: "1.1.0",
+      notes: "notes",
+      pub_date: "2026-08-07T10:00:00Z",
+      platforms: { "windows-x86_64": MANIFEST.platforms["windows-x86_64"] },
+    });
+  });
+
+  it("hands over every installer for the caller's platform", async () => {
+    // The updater asks for `{os}-{arch}-{installer}` before `{os}-{arch}`,
+    // and the request says nothing about which installer the caller used.
+    // So both have to arrive, or a .deb user gets offered an AppImage.
+    const { env } = testEnv({
+      ...MANIFEST,
+      platforms: {
+        ...MANIFEST.platforms,
+        "linux-x86_64-deb": { signature: "d", url: "https://example.com/a.deb" },
+        "linux-x86_64-appimage": { signature: "a", url: "https://example.com/a.AppImage" },
+      },
+    });
+    const res = await call(env, "/linux/x86_64/1.0.0");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { platforms: Record<string, unknown> };
+    expect(Object.keys(body.platforms).sort()).toEqual([
+      "linux-x86_64-appimage",
+      "linux-x86_64-deb",
+    ]);
+  });
+
+  it("still answers a platform published under the bare key alone", async () => {
+    const { env } = testEnv({
+      ...MANIFEST,
+      platforms: {
+        "linux-x86_64": { signature: "l", url: "https://example.com/a.AppImage" },
+      },
+    });
+    const res = await call(env, "/linux/x86_64/1.0.0");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { platforms: Record<string, unknown> };
+    expect(Object.keys(body.platforms)).toEqual(["linux-x86_64"]);
+  });
+
+  it("never leaks another platform's entries", async () => {
+    const { env } = testEnv({
+      ...MANIFEST,
+      platforms: {
+        ...MANIFEST.platforms,
+        "linux-x86_64-deb": { signature: "d", url: "https://example.com/a.deb" },
+        "darwin-aarch64": { signature: "m", url: "https://example.com/a.tar.gz" },
+      },
+    });
+    const res = await call(env, "/linux/x86_64/1.0.0");
+    const body = (await res.json()) as { platforms: Record<string, unknown> };
+    expect(Object.keys(body.platforms)).toEqual(["linux-x86_64-deb"]);
+  });
+
+  it("never answers one architecture with another architecture's entry", async () => {
+    // The family filter keys on `{os}-{arch}`, so a 32-bit caller must not
+    // be handed the 64-bit build. The hyphen is what keeps the match tight:
+    // `linux-x86_64` is not an installer variant of `linux-x86`.
+    const { env } = testEnv({
+      ...MANIFEST,
+      platforms: {
+        "linux-x86_64": { signature: "l", url: "https://example.com/a.AppImage" },
+      },
+    });
+    expect((await call(env, "/linux/i686/1.0.0")).status).toBe(204);
+  });
+
   it("offers the update, filtered to the caller's platform", async () => {
     const { env } = testEnv(MANIFEST);
     const res = await call(env, "/windows/x86_64/1.0.0");

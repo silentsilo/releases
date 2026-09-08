@@ -98,12 +98,26 @@ export default {
     });
 
     const platformKey = `${target}-${arch}`;
-    const entry = manifest?.platforms?.[platformKey];
+    // Every key for this platform, not just the bare one. The updater looks
+    // for `{os}-{arch}-{installer}` first and falls back to `{os}-{arch}`,
+    // but the request carries no installer, so the endpoint cannot pick: it
+    // hands over the whole family and the client takes its own. On Linux
+    // that is the difference between a .deb user being offered a .deb and
+    // being offered an AppImage it cannot install.
+    //
+    // The hyphen is what keeps the family tight. A caller on `linux-x86`
+    // does not match `linux-x86_64`, because that is not `linux-x86-`.
+    const platforms = Object.fromEntries(
+      Object.entries(manifest?.platforms ?? {}).filter(
+        ([key]) => key === platformKey || key.startsWith(`${platformKey}-`),
+      ),
+    );
+    const offered = Object.keys(platforms).length > 0;
 
     let outcome: "no-release" | "up-to-date" | "update-offered";
     let response: Response;
 
-    if (!manifest || !entry) {
+    if (!manifest || !offered) {
       outcome = "no-release";
       response = new Response(null, { status: 204 });
     } else if (compareVersions(manifest.version, installed) <= 0) {
@@ -111,13 +125,13 @@ export default {
       response = new Response(null, { status: 204 });
     } else {
       outcome = "update-offered";
-      // Only the caller's platform: the full map is nobody else's business
-      // and the updater only reads its own entry anyway.
+      // Only the caller's platform: no other platform's entries are its
+      // business, and the updater reads nothing outside its own family.
       response = Response.json({
         version: normalize(manifest.version),
         notes: manifest.notes ?? "",
         pub_date: manifest.pub_date ?? "",
-        platforms: { [platformKey]: entry },
+        platforms,
       });
     }
 
