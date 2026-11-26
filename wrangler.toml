@@ -25,9 +25,3 @@ kv_namespaces = [
 TARGETS = "windows,linux,darwin"
 ARCHS = "x86_64,aarch64,i686,armv7"
 MANIFEST_CACHE_TTL_SECONDS = "60"
-
-# Every update check writes one datapoint here: platform, installed
-# version, outcome. Nothing that identifies a machine or a person.
-[[analytics_engine_datasets]]
-binding = "UPDATE_CHECKS"
-dataset = "silentsilo_update_checks"

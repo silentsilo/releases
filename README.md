@@ -28,18 +28,10 @@ serving the wrong bytes can break updating and cannot install anything.
 
 ## What it records
 
-One datapoint per request, in `src/index.ts`, and this is all of it:
-
-- the platform, as `target-arch`
-- the version that asked
-- the outcome: `no-release`, `up-to-date` or `update-offered`
-
-No IP addresses, no identifiers, no cookies, nothing that distinguishes one
-install from another. Counting requests rather than people is the whole
-design, and the cost of it is that the number is an estimate.
-
-The check can be turned off in the app's settings, which removes that install
-from the count entirely.
+Nothing. Until the release after 1.5.2 each request wrote one datapoint
+(platform, version, outcome) to count active installs; that was removed.
+The endpoint keeps answering versions up to that release, and the versions
+after it do not ask it at all.
 
 ## The limit of publishing this
 

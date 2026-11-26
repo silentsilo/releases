@@ -14,16 +14,13 @@
  * minisign public key embedded in its binary, so this endpoint serving the
  * wrong bytes can break updates but can never inject code.
  *
- * Each check writes one analytics datapoint: platform, installed version,
- * outcome. Deliberately nothing else. No IPs, no identifiers, no cookies.
- * Counting requests, not people, is the whole design.
+ * Nothing is recorded: no datapoint, no IP, no identifier, no cookie.
  */
 
 import { compareVersions, isVersion, normalize } from "./semver";
 
 export interface Env {
   RELEASES: KVNamespace;
-  UPDATE_CHECKS?: AnalyticsEngineDataset;
   // Set under [vars] in wrangler.toml. Adding a platform when one ships is
   // a config edit there; the defaults below only cover a deployment where
   // the vars are missing entirely.
@@ -114,33 +111,16 @@ export default {
     );
     const offered = Object.keys(platforms).length > 0;
 
-    let outcome: "no-release" | "up-to-date" | "update-offered";
-    let response: Response;
-
-    if (!manifest || !offered) {
-      outcome = "no-release";
-      response = new Response(null, { status: 204 });
-    } else if (compareVersions(manifest.version, installed) <= 0) {
-      outcome = "up-to-date";
-      response = new Response(null, { status: 204 });
-    } else {
-      outcome = "update-offered";
-      // Only the caller's platform: no other platform's entries are its
-      // business, and the updater reads nothing outside its own family.
-      response = Response.json({
-        version: normalize(manifest.version),
-        notes: manifest.notes ?? "",
-        pub_date: manifest.pub_date ?? "",
-        platforms,
-      });
+    if (!manifest || !offered || compareVersions(manifest.version, installed) <= 0) {
+      return new Response(null, { status: 204 });
     }
-
-    env.UPDATE_CHECKS?.writeDataPoint({
-      indexes: [platformKey],
-      blobs: [target, arch, normalize(installed), outcome],
-      doubles: [1],
+    // Only the caller's platform: no other platform's entries are its
+    // business, and the updater reads nothing outside its own family.
+    return Response.json({
+      version: normalize(manifest.version),
+      notes: manifest.notes ?? "",
+      pub_date: manifest.pub_date ?? "",
+      platforms,
     });
-
-    return response;
   },
 } satisfies ExportedHandler<Env>;

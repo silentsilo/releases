@@ -2,7 +2,7 @@
   "name": "silentsilo-releases",
   "private": true,
   "version": "0.1.0",
-  "description": "Update endpoint for SilentSilo desktop: serves the updater manifest and counts update checks",
+  "description": "Update endpoint for SilentSilo desktop: serves the updater manifest",
   "type": "module",
   "engines": {
     "node": ">=20.9.0"

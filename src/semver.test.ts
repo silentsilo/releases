@@ -16,8 +16,6 @@ describe("isVersion", () => {
   });
 
   it("rejects anything long enough to be sent for the sake of it", () => {
-    // Whatever passes validation is written to the analytics dataset, so the
-    // pattern on its own would let a stranger choose how much gets stored.
     expect(isVersion(`1.0.0-${"a".repeat(200)}`)).toBe(false);
     expect(isVersion(`${"9".repeat(50)}.0.0`)).toBe(false);
     // The longest thing a real build has any reason to report still fits.

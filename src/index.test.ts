@@ -80,7 +80,6 @@ describe("methods and routes", () => {
       const res = await call(env, path);
       expect(res.status).toBe(404);
     }
-    // Nothing invalid reaches the analytics dataset.
     expect(points).toHaveLength(0);
   });
 });
@@ -90,14 +89,14 @@ describe("update decisions", () => {
     const { env, points } = testEnv(null);
     const res = await call(env, "/windows/x86_64/1.0.0");
     expect(res.status).toBe(204);
-    expect(points[0]?.blobs?.[3]).toBe("no-release");
+    expect(points).toHaveLength(0);
   });
 
   it("204s when the manifest has no entry for the caller's platform", async () => {
     const { env, points } = testEnv(MANIFEST);
     const res = await call(env, "/linux/x86_64/1.0.0");
     expect(res.status).toBe(204);
-    expect(points[0]?.blobs?.[3]).toBe("no-release");
+    expect(points).toHaveLength(0);
   });
 
   it("204s when the caller is current or ahead", async () => {
@@ -106,10 +105,7 @@ describe("update decisions", () => {
       const res = await call(env, `/windows/x86_64/${installed}`);
       expect(res.status).toBe(204);
     }
-    expect(points.map((p) => p.blobs?.[3])).toEqual([
-      "up-to-date",
-      "up-to-date",
-    ]);
+    expect(points).toHaveLength(0);
   });
 
   it("hands a Windows caller exactly what it handed before", async () => {
@@ -251,20 +247,15 @@ describe("platform vocabulary from vars", () => {
   });
 });
 
-describe("analytics", () => {
-  it("writes exactly platform, version and outcome", async () => {
+describe("records nothing", () => {
+  it("writes nothing even where a dataset is still bound", async () => {
     const { env, points } = testEnv(MANIFEST);
     await call(env, "/windows/x86_64/v1.0.0");
-    expect(points).toEqual([
-      {
-        indexes: ["windows-x86_64"],
-        blobs: ["windows", "x86_64", "1.0.0", "update-offered"],
-        doubles: [1],
-      },
-    ]);
+    await call(env, "/windows/x86_64/1.1.0");
+    expect(points).toHaveLength(0);
   });
 
-  it("still answers when the analytics binding is absent", async () => {
+  it("answers with no dataset bound", async () => {
     const env = {
       RELEASES: { get: async () => MANIFEST },
     } as unknown as Env;

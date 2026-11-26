@@ -9,10 +9,8 @@
 const VERSION_RE = /^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/;
 
 /**
- * Anything a real build reports is far under this. The cap is here because
- * whatever passes validation is written to the analytics dataset, and the
- * pattern alone would accept a version thousands of characters long from
- * anyone who felt like sending one.
+ * Anything a real build reports is far under this. The pattern alone would
+ * accept a version thousands of characters long.
  */
 const MAX_VERSION_LENGTH = 32;
 
